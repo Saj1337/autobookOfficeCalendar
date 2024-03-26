@@ -1,0 +1,92 @@
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from time import sleep
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
+from selenium import webdriver
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.actions.action_builder import ActionBuilder
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import MoveTargetOutOfBoundsException
+
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver.set_window_size(1024, 600)
+driver.maximize_window()
+
+def login_office(username, password):
+    driver.get("https://outlook.office.com/bookings/calendar")
+    email_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "i0116")))
+    email_field.send_keys(username)
+    driver.find_element(By.ID, "idSIButton9").click()
+    password_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "i0118"))).send_keys(password)
+    password_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "idSIButton9"))).click()
+    password_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "idSIButton9"))).click()
+
+# Credentials
+username = ""
+password = ""
+
+def nextDay():
+    sleep(5)
+    right_arrow = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div/div[3]/div[2]/div/div/div[1]/div/div/div/div[1]/div[4]'))).click() 
+
+def findDesk6():
+    try:
+        desk6 = driver.find_element(By.XPATH, '//*[@id="id__580"]/div/div[25]/div[1]/div/div[2]/div')
+        return True
+    except:
+        return False
+
+def findWeekend():
+    try:
+        element = driver.find_element(By.CSS_SELECTOR, 'span[style="color: rgb(173, 173, 173);"]')
+        text = element.text
+        if text == "Off work all day":
+            return True
+    except:
+        pass
+    return False
+
+def exitIfWeekend():
+    exit1 = driver.find_element(By.XPATH, '//span[text()="Discard"]').click()
+    exit2 = driver.find_element(By.XPATH, '//button[@type="button" and .//span[text()="Discard changes"]]').click()
+
+def initiatePopup():
+    interface = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="Jump to calendar view-region"]/div/div/div/div[2]')))
+    if interface:
+        x_coordinate = 3001
+        y_coordinate = 408
+
+        actions = ActionChains(driver)
+        actions.move_by_offset(x_coordinate, y_coordinate)
+        actions.context_click()
+        actions.perform()
+        sleep(3)
+        try:
+            new = driver.find_element(By.XPATH, '//button[@name="New"]')
+            new.click()
+        except Exception as e:
+            print("Error:", e)
+
+def fillForm():
+    customer_name = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "ms-BasePicker-input")))
+    customer_name.send_keys("[EMAIL HERE]")
+    email_field1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "[aria-label=Email]")))
+    email_field1.send_keys("[NAME HERE]")
+    createbooking = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//span[text()="Create booking"]')))
+    createbooking.click()
+
+#main
+login_office(username, password)
+for i in range(100):
+    nextDay()
+    if not findDesk6():
+        initiatePopup()
+        if findWeekend():
+            exitIfWeekend()
+        else:
+            fillForm()
